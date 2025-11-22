@@ -12,8 +12,6 @@ cp email_senders.json.example email_senders.json
 uvicorn app.main:app --reload
 ```
 
-详细环境变量说明见 `backend/README.md`。
-
 ## Frontend（Next.js）
 
 ```bash
