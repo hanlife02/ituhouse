@@ -1,0 +1,22 @@
+[
+  {
+    "name": "Primary SMTP",
+    "from_email": "rabbit@example.com",
+    "host": "smtp.example.com",
+    "port": 465,
+    "use_ssl": true,
+    "use_tls": false,
+    "username": "rabbit@example.com",
+    "password": "your-app-password"
+  },
+  {
+    "name": "Backup SMTP",
+    "from_email": "rabbit-backup@example.com",
+    "host": "smtp-backup.example.com",
+    "port": 587,
+    "use_ssl": false,
+    "use_tls": true,
+    "username": "rabbit-backup@example.com",
+    "password": "your-backup-app-password"
+  }
+]

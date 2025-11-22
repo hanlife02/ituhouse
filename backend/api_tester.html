@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>ituhouse API Tester</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      body {
+        margin: 0;
+        padding: 24px;
+        background: #f5f5f5;
+        color: #222;
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: #111;
+          color: #f3f3f3;
+        }
+      }
+      .container {
+        max-width: 960px;
+        margin: 0 auto;
+      }
+      h1,
+      h2 {
+        margin-bottom: 0.4rem;
+      }
+      section {
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 20px;
+        background: rgba(255, 255, 255, 0.8);
+      }
+      @media (prefers-color-scheme: dark) {
+        section {
+          background: rgba(0, 0, 0, 0.35);
+          border-color: rgba(255, 255, 255, 0.1);
+        }
+      }
+      label {
+        display: block;
+        font-weight: 600;
+        margin-top: 8px;
+      }
+      input,
+      textarea,
+      button {
+        width: 100%;
+        padding: 8px;
+        margin-top: 4px;
+        border-radius: 4px;
+        border: 1px solid rgba(0, 0, 0, 0.2);
+        font-size: 0.95rem;
+      }
+      button {
+        margin-top: 12px;
+        cursor: pointer;
+        background: #1f7aec;
+        color: white;
+        border: none;
+        font-weight: 600;
+      }
+      button.secondary {
+        background: #5c5c5c;
+      }
+      pre {
+        white-space: pre-wrap;
+        background: #000;
+        color: #0f0;
+        padding: 16px;
+        border-radius: 8px;
+        max-height: 300px;
+        overflow-y: auto;
+        font-size: 0.85rem;
+      }
+      .flex {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      .flex > div {
+        flex: 1 1 260px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>ituhouse API 检查页面</h1>
+      <p>用于快速验证 FastAPI 服务是否可用及主要接口是否工作。填写信息后点击各按钮即可看到响应。</p>
+
+      <section>
+        <label for="base-url">API Base URL</label>
+        <input id="base-url" value="http://localhost:8000" />
+        <label for="auth-token">当前 token</label>
+        <input id="auth-token" readonly placeholder="登录后自动填入" />
+        <button type="button" class="secondary" onclick="clearToken()">清除 token</button>
+      </section>
+
+      <section>
+        <h2>健康检查 & 当前用户</h2>
+        <div class="flex">
+          <div>
+            <button type="button" onclick="hitEndpoint('GET', '/health')">请求 /health</button>
+          </div>
+          <div>
+            <button type="button" onclick="hitEndpoint('GET', '/auth/me', true)">请求 /auth/me</button>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>邮箱验证码 & 注册 & 登录</h2>
+        <form id="requestCodeForm">
+          <label for="code-email">邮箱</label>
+          <input id="code-email" required type="email" />
+          <button type="submit">申请验证码</button>
+        </form>
+        <form id="registerForm">
+          <div class="flex">
+            <div>
+              <label for="register-email">邮箱</label>
+              <input id="register-email" type="email" required />
+            </div>
+            <div>
+              <label for="register-code">验证码</label>
+              <input id="register-code" required maxlength="6" />
+            </div>
+          </div>
+          <label for="register-username">用户名</label>
+          <input id="register-username" required />
+          <div class="flex">
+            <div>
+              <label for="register-password">密码</label>
+              <input id="register-password" type="password" required />
+            </div>
+            <div>
+              <label for="register-locale">语言(optional)</label>
+              <input id="register-locale" placeholder="默认 zh-CN" />
+            </div>
+            <div>
+              <label for="register-theme">主题(optional)</label>
+              <input id="register-theme" placeholder="默认 system" />
+            </div>
+          </div>
+          <button type="submit">注册</button>
+        </form>
+        <form id="loginForm">
+          <label for="login-identifier">用户名或邮箱</label>
+          <input id="login-identifier" required />
+          <label for="login-password">密码</label>
+          <input id="login-password" type="password" required />
+          <button type="submit">登录</button>
+        </form>
+      </section>
+
+      <section>
+        <h2>帖子 & 评论</h2>
+        <div class="flex">
+          <div>
+            <label for="posts-page">页码 (20/页)</label>
+            <input id="posts-page" type="number" value="1" min="1" />
+            <button type="button" onclick="listPosts()">获取帖子</button>
+          </div>
+          <div>
+            <form id="createPostForm">
+              <label for="post-title">标题</label>
+              <input id="post-title" required />
+              <label for="post-content">内容</label>
+              <textarea id="post-content" rows="4" required></textarea>
+              <label for="post-image">图片 URL (可选)</label>
+              <input id="post-image" />
+              <button type="submit">创建帖子（需登录）</button>
+            </form>
+          </div>
+          <div>
+            <form id="commentForm">
+              <label for="comment-post-id">帖子 ID</label>
+              <input id="comment-post-id" required />
+              <label for="comment-content">评论</label>
+              <textarea id="comment-content" rows="3" required></textarea>
+              <button type="submit">发表评论（需登录）</button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>关于页面 Markdown</h2>
+        <button type="button" onclick="hitEndpoint('GET', '/about/sections')">获取所有区块</button>
+        <form id="aboutForm">
+          <label for="about-slug">Slug（about_rabbits / about_care_team / about_feeding）</label>
+          <input id="about-slug" required />
+          <label for="about-title">标题（可选）</label>
+          <input id="about-title" />
+          <label for="about-body">Markdown 内容</label>
+          <textarea id="about-body" rows="4" required></textarea>
+          <button type="submit">更新区块（需管理员 token）</button>
+        </form>
+      </section>
+
+      <section>
+        <h2>响应日志</h2>
+        <pre id="log"></pre>
+      </section>
+    </div>
+
+    <script>
+      let authToken = null;
+      const logEl = document.getElementById("log");
+      const tokenInput = document.getElementById("auth-token");
+
+      function getBaseUrl() {
+        const raw = document.getElementById("base-url").value.trim();
+        return raw.endsWith("/") ? raw.slice(0, -1) : raw;
+      }
+
+      function log(message, data) {
+        const time = new Date().toLocaleTimeString();
+        const payload = data ? JSON.stringify(data, null, 2) : "";
+        logEl.textContent = `[${time}] ${message}\n${payload}\n\n${logEl.textContent}`.slice(0, 5000);
+      }
+
+      function setToken(token) {
+        authToken = token;
+        tokenInput.value = token || "";
+      }
+
+      function clearToken() {
+        setToken("");
+        log("已清除 token");
+      }
+
+      async function hitEndpoint(method, path, requiresAuth = false, body) {
+        const headers = { "Content-Type": "application/json" };
+        if (requiresAuth) {
+          if (!authToken) {
+            alert("需要先登录获取 token");
+            return;
+          }
+          headers.Authorization = `Bearer ${authToken}`;
+        }
+        try {
+          const response = await fetch(getBaseUrl() + path, {
+            method,
+            headers,
+            body: body ? JSON.stringify(body) : undefined,
+          });
+          const text = await response.text();
+          let parsed;
+          try {
+            parsed = JSON.parse(text);
+          } catch {
+            parsed = text;
+          }
+          log(`${method} ${path} -> ${response.status}`, parsed);
+          return { response, parsed };
+        } catch (error) {
+          log(`${method} ${path} 请求失败`, { error: String(error) });
+        }
+      }
+
+      document.getElementById("requestCodeForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const email = document.getElementById("code-email").value.trim();
+        await hitEndpoint("POST", "/auth/request-code", false, { email });
+      });
+
+      document.getElementById("registerForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const payload = {
+          email: document.getElementById("register-email").value.trim(),
+          verification_code: document.getElementById("register-code").value.trim(),
+          username: document.getElementById("register-username").value.trim(),
+          password: document.getElementById("register-password").value,
+          preferred_locale: document.getElementById("register-locale").value.trim() || undefined,
+          preferred_theme: document.getElementById("register-theme").value.trim() || undefined,
+        };
+        await hitEndpoint("POST", "/auth/register", false, payload);
+      });
+
+      document.getElementById("loginForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const payload = {
+          identifier: document.getElementById("login-identifier").value.trim(),
+          password: document.getElementById("login-password").value,
+        };
+        const { parsed } = (await hitEndpoint("POST", "/auth/login", false, payload)) || {};
+        if (parsed && parsed.access_token) {
+          setToken(parsed.access_token);
+          log("登录成功，token 已保存");
+        }
+      });
+
+      function requireToken() {
+        if (!authToken) {
+          alert("此操作需要登录后的 token");
+          throw new Error("missing token");
+        }
+      }
+
+      async function listPosts() {
+        const page = Number(document.getElementById("posts-page").value) || 1;
+        await hitEndpoint("GET", `/posts?page=${page}`, false);
+      }
+
+      document.getElementById("createPostForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        try {
+          requireToken();
+        } catch {
+          return;
+        }
+        const payload = {
+          title: document.getElementById("post-title").value.trim(),
+          content: document.getElementById("post-content").value.trim(),
+          image_url: document.getElementById("post-image").value.trim() || undefined,
+        };
+        await hitEndpoint("POST", "/posts", true, payload);
+      });
+
+      document.getElementById("commentForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        try {
+          requireToken();
+        } catch {
+          return;
+        }
+        const postId = document.getElementById("comment-post-id").value.trim();
+        const payload = { content: document.getElementById("comment-content").value.trim() };
+        await hitEndpoint("POST", `/posts/${postId}/comments`, true, payload);
+      });
+
+      document.getElementById("aboutForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        try {
+          requireToken();
+        } catch {
+          return;
+        }
+        const slug = document.getElementById("about-slug").value.trim();
+        const payload = {
+          title: document.getElementById("about-title").value.trim() || undefined,
+          body_markdown: document.getElementById("about-body").value,
+        };
+        await hitEndpoint("PUT", `/about/sections/${slug}`, true, payload);
+      });
+    </script>
+  </body>
+</html>
