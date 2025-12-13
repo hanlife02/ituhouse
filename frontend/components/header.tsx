@@ -47,7 +47,7 @@ export function Header() {
                   <Image src="/logo.ico" alt="Logo" fill className="object-cover" />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-sm font-bold leading-none">{language === "zh" ? "小兔书" : "ituhouse"}</span>
+                  <span className="text-base font-bold leading-none">{language === "zh" ? "小兔书" : "ituhouse"}</span>
                 </div>
               </Link>
             </div>
@@ -68,7 +68,7 @@ export function Header() {
                 <Image src="/logo.ico" alt="Logo" fill className="object-cover" />
               </div>
               <div className="flex flex-col">
-                <span className="text-sm font-bold leading-none">{language === "zh" ? "小兔书" : "ituhouse"}</span>
+                <span className="text-base font-bold leading-none">{language === "zh" ? "小兔书" : "ituhouse"}</span>
               </div>
             </Link>
 
@@ -78,7 +78,7 @@ export function Header() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`text-sm font-medium transition-colors hover:text-primary ${
+                  className={`text-base font-medium transition-colors hover:text-primary ${
                     pathname === item.href ? "text-foreground" : "text-muted-foreground"
                   }`}
                 >

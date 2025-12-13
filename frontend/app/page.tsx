@@ -34,33 +34,33 @@ export default function HomePage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Link href="/posts" className="group">
             <Card className="h-full transition-all hover:shadow-lg hover:scale-105 cursor-pointer border-2 hover:border-primary/50">
-              <CardContent className="flex flex-col items-center justify-center p-8 space-y-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-                  <BookOpen className="h-8 w-8" />
+              <CardContent className="flex flex-col items-center justify-center p-5 space-y-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                  <BookOpen className="h-6 w-6" />
                 </div>
-                <h2 className="text-xl font-semibold">{t("posts")}</h2>
+                <h2 className="text-base font-semibold">{t("posts")}</h2>
               </CardContent>
             </Card>
           </Link>
 
           <Link href="/about" className="group">
             <Card className="h-full transition-all hover:shadow-lg hover:scale-105 cursor-pointer border-2 hover:border-primary/50">
-              <CardContent className="flex flex-col items-center justify-center p-8 space-y-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-                  <Info className="h-8 w-8" />
+              <CardContent className="flex flex-col items-center justify-center p-5 space-y-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                  <Info className="h-6 w-6" />
                 </div>
-                <h2 className="text-xl font-semibold">{t("about")}</h2>
+                <h2 className="text-base font-semibold">{t("about")}</h2>
               </CardContent>
             </Card>
           </Link>
 
           <Link href="/profile" className="group">
             <Card className="h-full transition-all hover:shadow-lg hover:scale-105 cursor-pointer border-2 hover:border-primary/50">
-              <CardContent className="flex flex-col items-center justify-center p-8 space-y-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-                  <User className="h-8 w-8" />
+              <CardContent className="flex flex-col items-center justify-center p-5 space-y-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                  <User className="h-6 w-6" />
                 </div>
-                <h2 className="text-xl font-semibold">{t("profile")}</h2>
+                <h2 className="text-base font-semibold">{t("profile")}</h2>
               </CardContent>
             </Card>
           </Link>
