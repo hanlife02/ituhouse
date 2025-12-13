@@ -7,9 +7,10 @@ type ApiFetchOptions = RequestInit & {
   token?: string
 }
 
-function buildHeaders(token?: string, initHeaders?: HeadersInit): HeadersInit {
+function buildHeaders(token?: string, initHeaders?: HeadersInit, body?: unknown): HeadersInit {
   const headers = new Headers(initHeaders || {})
-  if (!headers.has("Content-Type")) {
+  const shouldSetContentType = !(body instanceof FormData)
+  if (shouldSetContentType && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json")
   }
   if (token) {
@@ -22,7 +23,7 @@ export async function apiFetch<TResponse>(path: string, options: ApiFetchOptions
   const { token, ...rest } = options
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...rest,
-    headers: buildHeaders(token, rest.headers),
+    headers: buildHeaders(token, rest.headers, rest.body),
   })
 
   const text = await response.text()

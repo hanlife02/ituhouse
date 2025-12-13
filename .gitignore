@@ -5,6 +5,7 @@
 .venv
 backend/.venv
 backend/email_senders.json
+backend/uploads
 **/.env
 .DS_Store
 __pycache__

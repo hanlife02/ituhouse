@@ -3,25 +3,28 @@ from __future__ import annotations
 import secrets
 import string
 from datetime import timedelta
-from uuid import UUID
+from pathlib import Path
+from uuid import UUID, uuid4
 
-from fastapi import Depends, FastAPI, HTTPException, Query, status
+from fastapi import Depends, FastAPI, File, HTTPException, Query, Request, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from .auth import create_access_token, get_current_user, get_password_hash, require_roles, verify_password
-from .config import get_settings
-from .database import get_db
-from .initialization import run_initialization
-from .email_service import send_verification_email
-from .models import AboutSection, Comment, EmailVerificationCode, Post, User, UserRole
-from .schemas import (
+from app.auth import create_access_token, get_current_user, get_password_hash, require_roles, verify_password
+from app.config import get_settings
+from app.database import get_db
+from app.initialization import run_initialization
+from app.email_service import send_verification_email
+from app.models import AboutSection, Comment, EmailVerificationCode, Post, User, UserRole
+from app.schemas import (
     AboutSectionResponse,
     AboutSectionUpdate,
     CommentCreate,
     CommentResponse,
     EmailCodeRequest,
+    ImageUploadResponse,
     LoginRequest,
     PaginatedPosts,
     PostCreate,
@@ -31,7 +34,7 @@ from .schemas import (
     TokenResponse,
     UserResponse,
 )
-from .timezone import now
+from app.timezone import now
 
 settings = get_settings()
 app = FastAPI(
@@ -39,6 +42,21 @@ app = FastAPI(
     description="Backend service for 小兔书 · ituhouse.",
     version="0.1.0",
 )
+
+UPLOAD_DIR = Path(__file__).resolve().parent / "uploads"
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+ALLOWED_IMAGE_TYPES: dict[str, str] = {
+    "image/jpeg": ".jpg",
+    "image/jpg": ".jpg",
+    "image/png": ".png",
+    "image/gif": ".gif",
+    "image/webp": ".webp",
+    "image/avif": ".avif",
+}
+MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5 MB
+CHUNK_SIZE = 1024 * 1024
+
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 cors_origins = settings.cors_allow_origins or ["http://localhost:3000"]
 
@@ -64,6 +82,34 @@ def health() -> dict[str, str]:
 def _generate_code(length: int = 6) -> str:
     digits = string.digits
     return "".join(secrets.choice(digits) for _ in range(length))
+
+
+async def _save_upload(file: UploadFile, destination: Path) -> int:
+    size = 0
+    try:
+        with destination.open("wb") as buffer:
+            while True:
+                chunk = await file.read(CHUNK_SIZE)
+                if not chunk:
+                    break
+                size += len(chunk)
+                if size > MAX_IMAGE_SIZE:
+                    raise HTTPException(
+                        status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                        detail="Image too large (max 5MB)",
+                    )
+                buffer.write(chunk)
+    except HTTPException:
+        if destination.exists():
+            destination.unlink()
+        raise
+    except Exception as exc:  # pragma: no cover - unexpected IO failure
+        if destination.exists():
+            destination.unlink()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to upload image") from exc
+    finally:
+        await file.close()
+    return size
 
 
 @app.post("/auth/request-code", status_code=status.HTTP_202_ACCEPTED)
@@ -196,6 +242,24 @@ def create_post(
     return post
 
 
+@app.post("/api/uploads/images", response_model=ImageUploadResponse, status_code=status.HTTP_201_CREATED)
+async def upload_image(
+    request: Request,
+    file: UploadFile = File(...),
+    _: User = Depends(require_roles(UserRole.USER, UserRole.ADMIN)),
+) -> ImageUploadResponse:
+    content_type = file.content_type or ""
+    extension = ALLOWED_IMAGE_TYPES.get(content_type)
+    if not extension:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported image type")
+
+    filename = f"{uuid4().hex}{extension}"
+    destination = UPLOAD_DIR / filename
+    file_size = await _save_upload(file, destination)
+    url = request.url_for("uploads", path=filename)
+    return ImageUploadResponse(url=str(url), filename=filename, size=file_size)
+
+
 @app.get("/posts/{post_id}", response_model=PostResponse)
 def get_post(post_id: UUID, db: Session = Depends(get_db)) -> PostResponse:
     post = db.get(Post, post_id)
@@ -270,3 +334,16 @@ def update_user_role(
     db.commit()
     db.refresh(user)
     return user
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    reload_enabled = settings.environment.lower() != "production"
+    app_target = "main:app" if reload_enabled else app
+    uvicorn.run(
+        app_target,
+        host="0.0.0.0",
+        port=8000,
+        reload=reload_enabled,
+    )

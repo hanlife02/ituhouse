@@ -56,6 +56,12 @@ class EmailCodeRequest(BaseModel):
     email: EmailStr
 
 
+class ImageUploadResponse(BaseModel):
+    url: str
+    filename: str
+    size: int
+
+
 class PostBase(BaseModel):
     title: str
     content: str

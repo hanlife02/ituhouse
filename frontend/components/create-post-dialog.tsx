@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState, type ChangeEvent } from "react"
 import {
   Dialog,
   DialogContent,
@@ -14,10 +14,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { useLanguage } from "@/components/providers/language-provider"
 import { useAuth } from "@/components/providers/auth-provider"
-import { ImagePlus, X } from "lucide-react"
+import { ImagePlus, Link2, X } from "lucide-react"
 import Image from "next/image"
 import { apiFetch } from "@/lib/api"
-import type { Post } from "@/lib/types"
+import type { ImageUploadResponse, Post } from "@/lib/types"
 
 type CreatePostDialogProps = {
   open: boolean
@@ -28,10 +28,14 @@ type CreatePostDialogProps = {
 export function CreatePostDialog({ open, onOpenChange, onPostCreated }: CreatePostDialogProps) {
   const { t } = useLanguage()
   const { user, token } = useAuth()
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [title, setTitle] = useState("")
   const [content, setContent] = useState("")
   const [image, setImage] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [imageUploading, setImageUploading] = useState(false)
+  const [showImageUrlInput, setShowImageUrlInput] = useState(false)
+  const [imageUrlInput, setImageUrlInput] = useState("")
 
   const isGuest = !user || user.role === "visitor"
 
@@ -62,6 +66,8 @@ export function CreatePostDialog({ open, onOpenChange, onPostCreated }: CreatePo
       setContent("")
       setTitle("")
       setImage(null)
+      setShowImageUrlInput(false)
+      setImageUrlInput("")
       onOpenChange(false)
       onPostCreated?.(newPost)
       alert(t("postCreated"))
@@ -72,10 +78,57 @@ export function CreatePostDialog({ open, onOpenChange, onPostCreated }: CreatePo
     }
   }
 
-  const handleImageSelect = () => {
-    const url = window.prompt("请输入图片链接（可选）")
-    if (url) {
-      setImage(url)
+  const handleImageUrlSelect = () => {
+    if (isGuest) {
+      alert(t("loginRequired"))
+      return
+    }
+    setShowImageUrlInput((prev) => !prev)
+  }
+
+  const handleImageUrlSave = () => {
+    if (!imageUrlInput.trim()) {
+      alert(t("imageUrlRequired"))
+      return
+    }
+    setImage(imageUrlInput.trim())
+    setImageUrlInput("")
+    setShowImageUrlInput(false)
+  }
+
+  const handleFileButtonClick = () => {
+    if (isGuest) {
+      alert(t("loginRequired"))
+      return
+    }
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) {
+      return
+    }
+    if (isGuest) {
+      alert(t("loginRequired"))
+      event.target.value = ""
+      return
+    }
+    setImageUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      const response = await apiFetch<ImageUploadResponse>("/api/uploads/images", {
+        method: "POST",
+        token: token ?? undefined,
+        body: formData,
+      })
+      setImage(response.url)
+    } catch (error: any) {
+      alert(error?.message || t("imageUploadFailed"))
+    } finally {
+      setImageUploading(false)
+      event.target.value = ""
     }
   }
 
@@ -92,6 +145,13 @@ export function CreatePostDialog({ open, onOpenChange, onPostCreated }: CreatePo
         </DialogHeader>
 
         <div className="space-y-4 py-4">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileChange}
+          />
           <Input
             placeholder={t("postTitle")}
             value={title}
@@ -115,7 +175,7 @@ export function CreatePostDialog({ open, onOpenChange, onPostCreated }: CreatePo
                 variant="destructive"
                 className="absolute top-2 right-2"
                 onClick={handleRemoveImage}
-                disabled={isGuest}
+                disabled={isGuest || imageUploading}
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -123,10 +183,44 @@ export function CreatePostDialog({ open, onOpenChange, onPostCreated }: CreatePo
           )}
 
           {!image && (
-            <Button variant="outline" className="w-full bg-transparent" onClick={handleImageSelect} disabled={isGuest}>
-              <ImagePlus className="mr-2 h-4 w-4" />
-              {t("addImage")}
-            </Button>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button
+                className="flex-1"
+                variant="outline"
+                onClick={handleFileButtonClick}
+                disabled={isGuest || imageUploading}
+              >
+                <ImagePlus className="mr-2 h-4 w-4" />
+                {imageUploading ? t("uploadingImage") : t("chooseFromDevice")}
+              </Button>
+              <Button
+                className="flex-1"
+                variant="secondary"
+                onClick={handleImageUrlSelect}
+                disabled={isGuest || imageUploading}
+              >
+                <Link2 className="mr-2 h-4 w-4" />
+                {t("insertImageUrl")}
+              </Button>
+            </div>
+          )}
+
+          {showImageUrlInput && !image && (
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Input
+                value={imageUrlInput}
+                onChange={(e) => setImageUrlInput(e.target.value)}
+                placeholder={t("imageUrlPrompt")}
+                disabled={isGuest || imageUploading}
+              />
+              <Button variant="secondary" onClick={handleImageUrlSave} disabled={isGuest || imageUploading}>
+                {t("submit")}
+              </Button>
+            </div>
+          )}
+
+          {imageUploading && !image && (
+            <p className="text-sm text-muted-foreground">{t("uploadingImage")}</p>
           )}
         </div>
 
@@ -134,7 +228,7 @@ export function CreatePostDialog({ open, onOpenChange, onPostCreated }: CreatePo
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t("cancel")}
           </Button>
-          <Button onClick={handleSubmit} disabled={isGuest || isSubmitting}>
+          <Button onClick={handleSubmit} disabled={isGuest || isSubmitting || imageUploading}>
             {isSubmitting ? t("publishing") : t("publish")}
           </Button>
         </DialogFooter>

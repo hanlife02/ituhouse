@@ -9,7 +9,7 @@ cd backend
 pip install -r requirements.txt
 cp .env.example .env
 cp email_senders.json.example email_senders.json
-uvicorn app.main:app --reload
+python main.py
 ```
 
 ## Frontend（Next.js）

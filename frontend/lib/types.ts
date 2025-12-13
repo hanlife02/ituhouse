@@ -50,3 +50,9 @@ export type AboutSection = {
   body_markdown: string
   updated_at?: string | null
 }
+
+export type ImageUploadResponse = {
+  url: string
+  filename: string
+  size: number
+}
