@@ -45,15 +45,15 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="container mx-auto flex items-center justify-center py-16 px-6">
+    <div className="container mx-auto flex items-center justify-center py-16 px-5">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">{t("login")}</CardTitle>
+        <CardHeader className="space-y-1.5 p-5">
+          <CardTitle className="text-2xl font-semibold">{t("login")}</CardTitle>
         </CardHeader>
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 px-5">
             <div className="space-y-2">
-              <Label htmlFor="emailOrUsername">
+              <Label htmlFor="emailOrUsername" className="text-sm">
                 {t("username")} / {t("email")}
               </Label>
               <Input
@@ -63,10 +63,11 @@ export default function LoginPage() {
                 value={emailOrUsername}
                 onChange={(e) => setEmailOrUsername(e.target.value)}
                 required
+                className="h-10 text-sm rounded-xl"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">{t("password")}</Label>
+              <Label htmlFor="password" className="text-sm">{t("password")}</Label>
               <Input
                 id="password"
                 type="password"
@@ -74,26 +75,28 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                className="h-10 text-sm rounded-xl"
               />
             </div>
 
-            <div className="flex items-start gap-2">
+            <div className="flex items-start gap-2.5">
               <Checkbox
                 id="terms"
                 checked={agreedToTerms}
                 onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
+                className="mt-0.5"
               />
               <label
                 htmlFor="terms"
-                className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                className="text-sm leading-normal peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
                 {t("agreeToTermsPrefix")} <TermsOfService />
               </label>
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col gap-4">
+          <CardFooter className="flex flex-col gap-4 p-5 pt-2">
             {error && <p className="text-sm text-red-500">{error}</p>}
-            <Button type="submit" className="w-full" disabled={loading || !agreedToTerms}>
+            <Button type="submit" className="w-full h-10 text-sm rounded-full" disabled={loading || !agreedToTerms}>
               {loading ? t("loggingIn") : t("login")}
             </Button>
             <div className="flex justify-between text-sm w-full">

@@ -54,14 +54,14 @@ export default function ForgotPasswordPage() {
 
   if (success) {
     return (
-      <div className="container mx-auto flex items-center justify-center py-16 px-6">
+      <div className="container mx-auto flex items-center justify-center py-16 px-5">
         <Card className="w-full max-w-md">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold">{t("passwordResetSuccess")}</CardTitle>
-            <CardDescription>{t("passwordResetSuccessDesc")}</CardDescription>
+          <CardHeader className="space-y-1.5 p-5">
+            <CardTitle className="text-2xl font-semibold">{t("passwordResetSuccess")}</CardTitle>
+            <CardDescription className="text-sm">{t("passwordResetSuccessDesc")}</CardDescription>
           </CardHeader>
-          <CardFooter>
-            <Button asChild className="w-full">
+          <CardFooter className="p-5 pt-2">
+            <Button asChild className="w-full h-10 text-sm rounded-full">
               <Link href="/login">{t("backToLogin")}</Link>
             </Button>
           </CardFooter>
@@ -71,15 +71,17 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="container mx-auto flex items-center justify-center py-16 px-6">
+    <div className="container mx-auto flex items-center justify-center py-16 px-5">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">{t("forgotPassword")}</CardTitle>
+        <CardHeader className="space-y-1.5 p-5">
+          <CardTitle className="text-2xl font-semibold">{t("forgotPassword")}</CardTitle>
         </CardHeader>
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 px-5">
             <div className="space-y-2">
-              <Label htmlFor="email">{t("email")}</Label>
+              <Label htmlFor="email" className="text-sm">
+                {t("email")}
+              </Label>
               <div className="flex gap-2">
                 <Input
                   id="email"
@@ -88,13 +90,14 @@ export default function ForgotPasswordPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  className="h-10 text-sm rounded-xl"
                 />
                 <Button
                   type="button"
                   variant="outline"
                   onClick={handleSendCode}
                   disabled={!email || countdown > 0}
-                  className="whitespace-nowrap"
+                  className="whitespace-nowrap h-10 text-sm px-4 rounded-full"
                 >
                   {countdown > 0 ? `${countdown}s` : t("sendCode")}
                 </Button>
@@ -102,7 +105,9 @@ export default function ForgotPasswordPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="code">{t("verificationCode")}</Label>
+              <Label htmlFor="code" className="text-sm">
+                {t("verificationCode")}
+              </Label>
               <Input
                 id="code"
                 type="text"
@@ -110,11 +115,14 @@ export default function ForgotPasswordPage() {
                 value={verificationCode}
                 onChange={(e) => setVerificationCode(e.target.value)}
                 required
+                className="h-10 text-sm rounded-xl"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="newPassword">{t("password")}</Label>
+              <Label htmlFor="newPassword" className="text-sm">
+                {t("password")}
+              </Label>
               <Input
                 id="newPassword"
                 type="password"
@@ -122,11 +130,14 @@ export default function ForgotPasswordPage() {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
+                className="h-10 text-sm rounded-xl"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">{t("confirmPassword")}</Label>
+              <Label htmlFor="confirmPassword" className="text-sm">
+                {t("confirmPassword")}
+              </Label>
               <Input
                 id="confirmPassword"
                 type="password"
@@ -134,11 +145,12 @@ export default function ForgotPasswordPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
+                className="h-10 text-sm rounded-xl"
               />
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full" disabled={loading}>
+          <CardFooter className="flex flex-col gap-4 p-5 pt-2">
+            <Button type="submit" className="w-full h-10 text-sm rounded-full" disabled={loading}>
               {loading ? t("resetting") : t("resetPassword")}
             </Button>
             <div className="text-sm text-center w-full">

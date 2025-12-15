@@ -1,69 +1,44 @@
 "use client"
 
-import Link from "next/link"
 import Image from "next/image"
 import { useLanguage } from "@/components/providers/language-provider"
-import { Card, CardContent } from "@/components/ui/card"
-import { BookOpen, Info, User } from "lucide-react"
+import { RevealText } from "@/components/reveal-text"
 
 export default function HomePage() {
   const { t } = useLanguage()
+  const welcomeLine1 = t("welcomeLine1")
+  const welcomeLine2 = t("welcomeLine2")
+  const welcomeLine1DelayMs = 200
+  const welcomeLine1StaggerMs = 85
+  const welcomeLine2DelayMs = welcomeLine1DelayMs + Array.from(welcomeLine1).length * welcomeLine1StaggerMs + 300
 
   return (
-    <div className="container max-w-5xl mx-auto min-h-[calc(100vh-10rem)] flex items-center justify-center px-4 md:px-6">
-      <div className="w-full max-w-4xl mx-auto space-y-12">
-        {/* 欢迎区域 */}
-        <div className="text-center space-y-6">
-          <div className="flex justify-center">
-            <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-primary/10 shadow-lg overflow-hidden">
-              <Image src="/logo.ico" alt="Logo" width={96} height={96} className="object-cover" />
+    <div className="px-6 md:px-12 py-12 md:py-24">
+      <div className="w-full max-w-6xl mx-auto">
+        {/* Hero 区域 - 左文字右Logo */}
+        <div className="flex flex-col items-center gap-10 md:flex-row md:items-center md:justify-between md:gap-12 xl:gap-24">
+          {/* 左侧文字 */}
+          <div className="flex flex-col items-center md:items-start text-center md:text-left flex-1 space-y-8">
+            <span className="inline-block rounded-full bg-primary/10 px-5 py-2 text-sm md:text-base font-medium text-primary">
+              Beta
+            </span>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold leading-tight tracking-tight">
+              <RevealText text={welcomeLine1} baseDelayMs={welcomeLine1DelayMs} staggerMs={welcomeLine1StaggerMs} />
+            </h1>
+            <p
+              className="fade-in-up text-lg md:text-2xl text-muted-foreground leading-relaxed max-w-3xl"
+              style={{ animationDelay: `${welcomeLine2DelayMs}ms` }}
+            >
+              {welcomeLine2}
+            </p>
+          </div>
+
+          {/* 右侧圆形 Logo */}
+          <div className="order-last md:order-none flex-shrink-0">
+            <div className="h-56 w-56 sm:h-64 sm:w-64 md:h-56 md:w-56 lg:h-72 lg:w-72 rounded-full bg-primary/10 shadow-xl overflow-hidden">
+              <Image src="/logo.ico" alt="Logo" width={288} height={288} className="object-cover w-full h-full" />
             </div>
           </div>
-          <div className="space-y-2">
-            <div className="flex justify-center">
-              <span className="rounded-full bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
-                Beta · 开发中
-              </span>
-            </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-balance">{t("welcomeLine1")}</h1>
-            <p className="text-2xl md:text-3xl text-muted-foreground text-balance">{t("welcomeLine2")}</p>
-          </div>
-        </div>
-
-        {/* 导航卡片 */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Link href="/posts" className="group">
-            <Card className="h-full transition-all hover:shadow-lg hover:scale-105 cursor-pointer border-2 hover:border-primary/50">
-              <CardContent className="flex flex-col items-center justify-center p-5 space-y-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-                  <BookOpen className="h-6 w-6" />
-                </div>
-                <h2 className="text-base font-semibold">{t("posts")}</h2>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link href="/about" className="group">
-            <Card className="h-full transition-all hover:shadow-lg hover:scale-105 cursor-pointer border-2 hover:border-primary/50">
-              <CardContent className="flex flex-col items-center justify-center p-5 space-y-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-                  <Info className="h-6 w-6" />
-                </div>
-                <h2 className="text-base font-semibold">{t("about")}</h2>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link href="/profile" className="group">
-            <Card className="h-full transition-all hover:shadow-lg hover:scale-105 cursor-pointer border-2 hover:border-primary/50">
-              <CardContent className="flex flex-col items-center justify-center p-5 space-y-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-                  <User className="h-6 w-6" />
-                </div>
-                <h2 className="text-base font-semibold">{t("profile")}</h2>
-              </CardContent>
-            </Card>
-          </Link>
         </div>
       </div>
     </div>

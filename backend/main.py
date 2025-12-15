@@ -204,16 +204,15 @@ def current_user_profile(current_user: User = Depends(get_current_user)) -> User
 def list_posts(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=20),
+    author_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
 ) -> PaginatedPosts:
-    total = db.query(func.count(Post.id)).scalar() or 0
-    items = (
-        db.query(Post)
-        .order_by(Post.created_at.desc())
-        .offset((page - 1) * page_size)
-        .limit(page_size)
-        .all()
-    )
+    query = db.query(Post)
+    if author_id is not None:
+        query = query.filter(Post.author_id == author_id)
+
+    total = query.with_entities(func.count(Post.id)).scalar() or 0
+    items = query.order_by(Post.created_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
     has_more = page * page_size < total
     return PaginatedPosts(
         items=items,

@@ -4,6 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  font-size: 16px;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -72,6 +73,18 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.269 0 0);
   --sidebar-ring: oklch(0.439 0 0);
+}
+
+@media (min-width: 1024px) {
+  :root {
+    font-size: 17px;
+  }
+}
+
+@media (min-width: 1440px) {
+  :root {
+    font-size: 18px;
+  }
 }
 
 @theme inline {

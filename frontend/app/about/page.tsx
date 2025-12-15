@@ -1,7 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
@@ -18,10 +17,20 @@ export default function AboutPage() {
   const [sections, setSections] = useState<AboutSection[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [activeSlug, setActiveSlug] = useState<string | null>(null)
   const [editingSection, setEditingSection] = useState<AboutSection | null>(null)
   const [editTitle, setEditTitle] = useState("")
   const [editBody, setEditBody] = useState("")
   const isAdmin = user && (user.role === "admin" || user.role === "super_admin")
+
+  const activeSection = useMemo(() => {
+    if (!sections.length) return null
+    if (activeSlug) {
+      const found = sections.find((section) => section.slug === activeSlug)
+      if (found) return found
+    }
+    return sections[0]
+  }, [activeSlug, sections])
 
   const fetchSections = async () => {
     setLoading(true)
@@ -39,6 +48,38 @@ export default function AboutPage() {
   useEffect(() => {
     fetchSections()
   }, [])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    if (!sections.length) return
+
+    const applyHash = () => {
+      const hash = window.location.hash.replace(/^#/, "")
+      if (!hash) return
+      if (sections.some((section) => section.slug === hash)) {
+        setActiveSlug(hash)
+      }
+    }
+
+    applyHash()
+    window.addEventListener("hashchange", applyHash)
+    return () => window.removeEventListener("hashchange", applyHash)
+  }, [sections])
+
+  useEffect(() => {
+    if (!sections.length) return
+    setActiveSlug((prev) => prev ?? sections[0].slug)
+  }, [sections])
+
+  const setHash = (slug: string) => {
+    if (typeof window === "undefined") return
+    window.history.replaceState(null, "", `#${slug}`)
+  }
+
+  const handleSelectSection = (slug: string) => {
+    setActiveSlug(slug)
+    setHash(slug)
+  }
 
   const openEditor = (section: AboutSection) => {
     setEditingSection(section)
@@ -65,38 +106,91 @@ export default function AboutPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-6 md:px-12 lg:px-16">
-      <div className="mx-auto max-w-4xl space-y-8">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold">{t("about")}</h1>
-          {error && <p className="text-sm text-red-500">{error}</p>}
+    <div className="container mx-auto py-12 px-6 md:px-12 lg:px-24">
+      <div className="mx-auto max-w-6xl space-y-8">
+        <div className="space-y-3">
+          <h1 className="text-4xl md:text-5xl font-bold">{t("about")}</h1>
+          {error && <p className="text-base md:text-lg text-red-500">{error}</p>}
         </div>
 
         {loading ? (
-          <p className="text-sm text-muted-foreground">加载中...</p>
+          <p className="text-base md:text-lg text-muted-foreground">加载中...</p>
+        ) : !sections.length ? (
+          <p className="text-base md:text-lg text-muted-foreground">{language === "zh" ? "暂无内容。" : "No content."}</p>
         ) : (
-          <div className="space-y-6">
-            {sections.map((section) => (
-              <Card key={section.id}>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>{section.title}</CardTitle>
-                  {isAdmin && (
-                    <Button size="sm" variant="outline" onClick={() => openEditor(section)}>
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-10">
+            {/* 左侧侧边栏（桌面端） */}
+            <aside className="hidden lg:block lg:col-span-3">
+              <div className="sticky top-20">
+                <div className="space-y-3">
+                  <h2 className="text-sm font-medium text-muted-foreground px-3">
+                    {language === "zh" ? "目录" : "Contents"}
+                  </h2>
+                  <nav className="flex flex-col">
+                    {sections.map((section) => {
+                      const isActive = section.slug === activeSection?.slug
+                      return (
+                        <button
+                          key={section.id}
+                          type="button"
+                          onClick={() => handleSelectSection(section.slug)}
+                          className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                            isActive
+                              ? "bg-primary/10 text-primary"
+                              : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                          }`}
+                          aria-current={isActive ? "page" : undefined}
+                        >
+                          <span className="block truncate">{section.title}</span>
+                        </button>
+                      )
+                    })}
+                  </nav>
+                </div>
+              </div>
+            </aside>
+
+            {/* 右侧内容 */}
+            <main className="lg:col-span-9">
+              {/* 移动端：下拉选择章节 */}
+              <div className="lg:hidden mb-6">
+                <label className="sr-only" htmlFor="about-section-select">
+                  {language === "zh" ? "选择章节" : "Select section"}
+                </label>
+                <select
+                  id="about-section-select"
+                  value={activeSection?.slug ?? ""}
+                  onChange={(e) => handleSelectSection(e.target.value)}
+                  className="w-full h-10 rounded-xl border bg-background px-3 text-sm"
+                >
+                  {sections.map((section) => (
+                    <option key={section.id} value={section.slug}>
+                      {section.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <article className="space-y-6">
+                <header className="flex flex-row items-center justify-between gap-4">
+                  <h2 className="text-2xl md:text-3xl font-semibold">{activeSection?.title}</h2>
+                  {isAdmin && activeSection && (
+                    <Button size="lg" variant="outline" className="px-6 text-base" onClick={() => openEditor(activeSection)}>
                       {language === "zh" ? "编辑" : "Edit"}
                     </Button>
                   )}
-                </CardHeader>
-                <CardContent className="prose prose-sm dark:prose-invert max-w-none">
-                  <ReactMarkdown>{section.body_markdown}</ReactMarkdown>
-                </CardContent>
-              </Card>
-            ))}
+                </header>
+                <div className="prose prose-base md:prose-lg dark:prose-invert max-w-none">
+                  <ReactMarkdown>{activeSection?.body_markdown ?? ""}</ReactMarkdown>
+                </div>
+              </article>
+            </main>
           </div>
         )}
       </div>
 
       <Dialog open={!!editingSection} onOpenChange={() => setEditingSection(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>
               {language === "zh" ? "编辑" : "Edit"} {editingSection?.title}

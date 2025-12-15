@@ -10,6 +10,7 @@ import { useLanguage } from "@/components/providers/language-provider"
 import { useAuth } from "@/components/providers/auth-provider"
 import { MessageSquare, ArrowLeft, ChevronDown } from "lucide-react"
 import Image from "next/image"
+import { ImageLightbox } from "@/components/image-lightbox"
 import { apiFetch } from "@/lib/api"
 import type { Comment, Post } from "@/lib/types"
 
@@ -30,6 +31,8 @@ export default function PostDetailPage() {
   const [loadingPost, setLoadingPost] = useState(true)
   const [loadingComments, setLoadingComments] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null)
+  const [lightboxAlt, setLightboxAlt] = useState("Post image")
 
   const fetchPost = useCallback(async () => {
     if (!postId) return
@@ -101,52 +104,68 @@ export default function PostDetailPage() {
 
   const displayedComments = comments.slice(0, commentsToShow)
 
+  const openLightbox = (src: string, alt: string) => {
+    setLightboxSrc(src)
+    setLightboxAlt(alt)
+  }
+
   return (
-    <div className="container py-8">
-      <div className="mx-auto max-w-3xl space-y-6">
-        <Button variant="ghost" onClick={() => router.back()} className="gap-2">
-          <ArrowLeft className="h-4 w-4" />
+    <div className="container py-12 px-6 md:px-12 lg:px-24">
+      <div className="mx-auto max-w-5xl space-y-10">
+        <Button variant="ghost" onClick={() => router.back()} className="gap-2 text-lg">
+          <ArrowLeft className="h-5 w-5" />
           {language === "zh" ? "返回" : "Back"}
         </Button>
 
         {error && (
-          <p className="text-sm text-red-500" role="alert">
+          <p className="text-lg text-red-500" role="alert">
             {error}
           </p>
         )}
 
         {loadingPost ? (
           <Card>
-            <CardContent className="py-10 text-center text-sm text-muted-foreground">
+            <CardContent className="py-12 text-center text-lg text-muted-foreground">
               {language === "zh" ? "加载中..." : "Loading..."}
             </CardContent>
           </Card>
         ) : post ? (
           <Card className="overflow-hidden">
-            <CardHeader className="space-y-3">
-              <div className="flex items-center gap-3">
-                <Avatar className="h-10 w-10">
-                  <AvatarFallback className="bg-primary text-primary-foreground">
+            <CardHeader className="space-y-4 p-8">
+              <div className="flex items-center gap-5">
+                <Avatar className="h-14 w-14">
+                  <AvatarFallback className="bg-primary text-primary-foreground text-xl">
                     {(post.title?.[0] || "兔").toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col">
-                  <span className="text-sm font-medium">{post.title}</span>
-                  <span className="text-xs text-muted-foreground">{formatDate(post.created_at)}</span>
+                  <span className="text-lg font-medium">{post.title}</span>
+                  <span className="text-base text-muted-foreground">{formatDate(post.created_at)}</span>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-base leading-relaxed whitespace-pre-line">{post.content}</p>
+            <CardContent className="space-y-5 p-8 pt-0">
+              <p className="text-xl leading-relaxed whitespace-pre-line">{post.content}</p>
               {post.image_url && (
-                <div className="relative aspect-video w-full overflow-hidden rounded-lg border">
-                  <Image src={post.image_url || "/placeholder.svg"} alt="Post image" fill className="object-cover" />
-                </div>
+                <button
+                  type="button"
+                  className="block w-full md:max-w-[760px] md:mx-auto"
+                  onClick={() => openLightbox(post.image_url!, post.title ? `${post.title} image` : "Post image")}
+                >
+                  <div className="relative aspect-video w-full overflow-hidden rounded-2xl border">
+                    <Image
+                      src={post.image_url || "/placeholder.svg"}
+                      alt={post.title ? `${post.title} image` : "Post image"}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                </button>
               )}
             </CardContent>
-            <CardFooter className="border-t pt-4 gap-4">
-              <Button variant="ghost" size="sm" className="gap-2" disabled>
-                <MessageSquare className="h-4 w-4" />
+            <CardFooter className="border-t p-8 gap-4">
+              <Button variant="ghost" size="lg" className="gap-2 text-lg" disabled>
+                <MessageSquare className="h-5 w-5" />
                 <span>
                   {comments.length} {t("comments")}
                 </span>
@@ -155,76 +174,87 @@ export default function PostDetailPage() {
           </Card>
         ) : (
           <Card>
-            <CardContent className="py-10 text-center text-sm text-muted-foreground">
+            <CardContent className="py-12 text-center text-base text-muted-foreground">
               {language === "zh" ? "未找到帖子" : "Post not found"}
             </CardContent>
           </Card>
         )}
 
         <Card>
-          <CardHeader>
-            <h2 className="text-lg font-semibold">
+          <CardHeader className="p-8">
+            <h2 className="text-2xl font-semibold">
               {t("comments")} ({comments.length})
             </h2>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
+          <CardContent className="space-y-5 p-8 pt-0">
+            <div className="space-y-3">
               <Textarea
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
                 placeholder={t("comment")}
                 rows={3}
-                className="resize-none"
+                className="resize-none text-lg"
               />
               <div className="flex justify-end">
-                <Button onClick={handleSubmitComment} size="sm" disabled={loadingComments}>
+                <Button onClick={handleSubmitComment} size="lg" className="px-6 text-lg" disabled={loadingComments}>
                   {t("submit")}
                 </Button>
               </div>
             </div>
 
-            <div className="space-y-4 pt-4 border-t">
+            <div className="space-y-5 pt-5 border-t">
               {loadingComments && (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-lg text-muted-foreground">
                   {language === "zh" ? "加载评论中..." : "Loading comments..."}
                 </p>
               )}
               {displayedComments.map((comment) => (
-                <div key={comment.id} className="flex gap-3">
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback className="bg-muted text-muted-foreground text-xs">
+                <div key={comment.id} className="flex gap-4">
+                  <Avatar className="h-12 w-12">
+                    <AvatarFallback className="bg-muted text-muted-foreground text-base">
                       {(comment.author_id?.[0] || "兔").toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">
+                      <span className="text-lg font-medium">
                         {comment.author_id ? comment.author_id.slice(0, 8) : "ituhouse"}
                       </span>
-                      <span className="text-xs text-muted-foreground">{formatDate(comment.created_at)}</span>
+                      <span className="text-base text-muted-foreground">{formatDate(comment.created_at)}</span>
                     </div>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{comment.content}</p>
+                    <p className="text-lg text-muted-foreground leading-relaxed">{comment.content}</p>
                   </div>
                 </div>
               ))}
 
               {displayedComments.length < comments.length && (
-                <div className="flex justify-center pt-4">
-                  <Button onClick={loadMoreComments} variant="outline" size="sm" className="gap-2 bg-transparent">
-                    <ChevronDown className="h-4 w-4" />
+                <div className="flex justify-center pt-5">
+                  <Button onClick={loadMoreComments} variant="outline" size="lg" className="gap-2 bg-transparent px-6 text-lg">
+                    <ChevronDown className="h-6 w-6" />
                     {language === "zh" ? "展开更多评论" : "Load more"}
                   </Button>
                 </div>
               )}
 
               {!comments.length && !loadingComments && (
-                <p className="text-center text-sm text-muted-foreground py-4">
+                <p className="text-center text-lg text-muted-foreground py-6">
                   {language === "zh" ? "暂无评论" : "No comments yet"}
                 </p>
               )}
             </div>
           </CardContent>
         </Card>
+
+        {lightboxSrc && (
+          <ImageLightbox
+            open={!!lightboxSrc}
+            onOpenChange={(open) => {
+              if (!open) setLightboxSrc(null)
+            }}
+            src={lightboxSrc}
+            alt={lightboxAlt}
+          />
+        )}
       </div>
     </div>
   )

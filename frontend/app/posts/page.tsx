@@ -10,6 +10,7 @@ import { useAuth } from "@/components/providers/auth-provider"
 import { MessageSquare, ChevronDown, X, Plus, ArrowUp } from "lucide-react"
 import Image from "next/image"
 import { CreatePostDialog } from "@/components/create-post-dialog"
+import { ImageLightbox } from "@/components/image-lightbox"
 import { apiFetch } from "@/lib/api"
 import type { Comment, PaginatedPosts, Post } from "@/lib/types"
 
@@ -28,6 +29,8 @@ export default function PostsPage() {
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false)
   const [showScrollTop, setShowScrollTop] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null)
+  const [lightboxAlt, setLightboxAlt] = useState("Post image")
   const dedupePosts = useCallback((list: Post[]) => {
     const seen = new Set<string>()
     const result: Post[] = []
@@ -144,53 +147,67 @@ export default function PostsPage() {
     return date.toLocaleDateString(language === "zh" ? "zh-CN" : "en-US")
   }
 
+  const openLightbox = (src: string, alt: string) => {
+    setLightboxSrc(src)
+    setLightboxAlt(alt)
+  }
+
   return (
-    <div className="container py-8 px-6 md:px-12 lg:px-16 max-w-7xl mx-auto">
-      <div className={`${selectedPost ? "grid grid-cols-1 lg:grid-cols-12 gap-6" : ""}`}>
+    <div className="container py-10 px-5 md:px-10 lg:px-16 max-w-7xl mx-auto">
+      <div className={`${selectedPost ? "grid grid-cols-1 lg:grid-cols-12 gap-8" : ""}`}>
         {/* 左侧帖子列表 */}
         <div className={`space-y-6 ${selectedPost ? "lg:col-span-7" : ""}`}>
-          {errorMessage && <p className="text-sm text-red-500">{errorMessage}</p>}
+          {errorMessage && <p className="text-base text-red-500">{errorMessage}</p>}
 
           {/* 帖子列表 */}
           {posts.map((post) => (
             <Card
               key={post.id}
-              className={`overflow-hidden transition-all hover:shadow-lg cursor-pointer ${
+              className={`overflow-hidden cursor-pointer ${
                 selectedPost?.id === post.id ? "ring-2 ring-primary" : ""
               }`}
               onClick={() => handleSelectPost(post)}
             >
-              <CardHeader className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10">
-                    <AvatarFallback className="bg-primary text-primary-foreground">
+              <CardHeader className="space-y-4 p-5 md:p-6">
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-12 w-12">
+                    <AvatarFallback className="bg-primary/15 text-primary text-base font-medium">
                       {(post.title?.[0] || "兔").toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col">
-                    <span className="text-sm font-medium">
+                    <span className="text-base md:text-lg font-medium">
                       {post.title || `${t("posts")} #${post.id.slice(0, 6)}`}
                     </span>
-                    <span className="text-xs text-muted-foreground">{formatDate(post.created_at)}</span>
+                    <span className="text-sm md:text-base text-muted-foreground">{formatDate(post.created_at)}</span>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground leading-relaxed">{post.content}</p>
+              <CardContent className="space-y-4 px-5 pb-5 md:px-6">
+                <p className="text-base text-muted-foreground leading-relaxed line-clamp-3">{post.content}</p>
                 {post.image_url && (
-                  <div className="relative aspect-video w-full overflow-hidden rounded-lg border">
-                    <Image
-                      src={post.image_url || "/placeholder.svg"}
-                      alt="Post image"
-                      fill
-                      className="object-cover transition-transform hover:scale-105"
-                    />
-                  </div>
+                  <button
+                    type="button"
+                    className="block w-full sm:max-w-[520px] sm:mx-auto"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      openLightbox(post.image_url!, post.title ? `${post.title} image` : "Post image")
+                    }}
+                  >
+                    <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl border">
+                      <Image
+                        src={post.image_url || "/placeholder.svg"}
+                        alt={post.title ? `${post.title} image` : "Post image"}
+                        fill
+                        className="object-cover transition-transform hover:scale-105"
+                      />
+                    </div>
+                  </button>
                 )}
               </CardContent>
-              <CardFooter className="border-t pt-4 gap-4">
-                <Button variant="ghost" size="sm" className="gap-2" disabled>
-                  <MessageSquare className="h-4 w-4" />
+              <CardFooter className="border-t p-5 gap-4">
+                <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground text-base" disabled>
+                  <MessageSquare className="h-5 w-5" />
                   <span>{t("comments")}</span>
                 </Button>
               </CardFooter>
@@ -199,13 +216,13 @@ export default function PostsPage() {
 
           {/* 加载更多按钮 */}
           {hasMore && (
-            <div className="flex justify-center py-8">
+            <div className="flex justify-center py-10">
               <Button
                 onClick={loadPosts}
                 disabled={loading || !hasMore}
                 variant="outline"
                 size="lg"
-                className="min-w-40 bg-transparent"
+                className="min-w-40 bg-transparent text-base rounded-full px-6"
               >
                 {loading ? (language === "zh" ? "加载中..." : "Loading...") : t("loadMore")}
               </Button>
@@ -213,74 +230,79 @@ export default function PostsPage() {
           )}
 
           {!hasMore && posts.length > 0 && (
-            <p className="text-center text-sm text-muted-foreground py-8">{t("noMorePosts")}</p>
+            <p className="text-center text-base text-muted-foreground py-8">{t("noMorePosts")}</p>
           )}
         </div>
 
         {/* 右侧评论区 */}
         {selectedPost && (
           <div className="hidden lg:block lg:col-span-5">
-            <div className="sticky top-24 space-y-4">
-              <Card className="max-h-[calc(100vh-8rem)] flex flex-col bg-background/80 backdrop-blur-sm border-2">
-                <CardHeader className="border-b flex-shrink-0">
+            <div className="sticky top-20 space-y-4">
+              <Card className="max-h-[calc(100vh-6rem)] flex flex-col bg-background/80 backdrop-blur-sm border-2">
+                <CardHeader className="border-b flex-shrink-0 p-5">
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-semibold">
                       {t("comments")} ({allComments.length})
                     </h2>
-                    <Button variant="ghost" size="icon" onClick={handleCloseComments}>
-                      <X className="h-4 w-4" />
+                    <Button variant="ghost" size="icon" onClick={handleCloseComments} className="h-10 w-10">
+                      <X className="h-5 w-5" />
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
+                <CardContent className="flex-1 overflow-y-auto p-5 space-y-5">
                   {/* 发表评论 */}
-                  <div className="space-y-2">
+                  <div className="space-y-2.5">
                     <Textarea
                       value={commentText}
                       onChange={(e) => setCommentText(e.target.value)}
                       placeholder={t("comment")}
-                      rows={3}
-                      className="resize-none"
+                      rows={2}
+                      className="resize-none text-base rounded-xl"
                     />
                     <div className="flex justify-end">
-                      <Button onClick={handleSubmitComment} size="sm">
+                      <Button onClick={handleSubmitComment} size="sm" className="rounded-full px-6 text-base">
                         {t("submit")}
                       </Button>
                     </div>
                   </div>
 
                   {/* 评论列表 */}
-                  <div className="space-y-4 pt-4 border-t">
+                  <div className="space-y-5 pt-5 border-t">
                     {displayedComments.map((comment) => (
                       <div key={comment.id} className="flex gap-3">
-                        <Avatar className="h-8 w-8 flex-shrink-0">
-                          <AvatarFallback className="bg-muted text-muted-foreground text-xs">
+                        <Avatar className="h-10 w-10 flex-shrink-0">
+                          <AvatarFallback className="bg-muted text-muted-foreground text-sm md:text-base">
                             {comment.author_id?.[0] || "兔"}
                           </AvatarFallback>
                         </Avatar>
-                        <div className="flex-1 space-y-1 min-w-0">
+                        <div className="flex-1 space-y-0.5 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium">
+                            <span className="text-base font-medium">
                               {comment.author_id ? comment.author_id.slice(0, 8) : "ituhouse"}
                             </span>
-                            <span className="text-xs text-muted-foreground">{formatDate(comment.created_at)}</span>
+                            <span className="text-sm md:text-base text-muted-foreground">{formatDate(comment.created_at)}</span>
                           </div>
-                          <p className="text-sm text-muted-foreground leading-relaxed break-words">{comment.content}</p>
+                          <p className="text-base text-muted-foreground leading-relaxed break-words">{comment.content}</p>
                         </div>
                       </div>
                     ))}
 
                     {displayedComments.length < allComments.length && (
                       <div className="flex justify-center pt-4">
-                        <Button onClick={loadMoreComments} variant="outline" size="sm" className="gap-2 bg-transparent">
-                          <ChevronDown className="h-4 w-4" />
+                        <Button
+                          onClick={loadMoreComments}
+                          variant="outline"
+                          size="sm"
+                          className="gap-2 bg-transparent rounded-full px-6 text-base"
+                        >
+                          <ChevronDown className="h-5 w-5" />
                           {language === "zh" ? "展开更多评论" : "See more comments"}
                         </Button>
                       </div>
                     )}
 
                     {allComments.length === 0 && (
-                      <p className="text-center text-sm text-muted-foreground py-4">
+                      <p className="text-center text-base text-muted-foreground py-4">
                         {language === "zh" ? "暂无评论" : "No comments yet"}
                       </p>
                     )}
@@ -295,9 +317,9 @@ export default function PostsPage() {
       {/* 回到顶部按钮 */}
       {showScrollTop && (
         <Button
-          size="lg"
+          size="icon"
           variant="outline"
-          className="fixed bottom-24 right-8 h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all z-50 bg-background dark:bg-black dark:text-white dark:border-white"
+          className="fixed bottom-20 right-6 h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all z-50 bg-background"
           onClick={scrollToTop}
         >
           <ArrowUp className="h-5 w-5" />
@@ -306,8 +328,8 @@ export default function PostsPage() {
 
       {/* 发帖按钮 */}
       <Button
-        size="lg"
-        className="fixed bottom-8 right-8 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-shadow z-50 dark:bg-black dark:text-white dark:hover:bg-black/90"
+        size="icon"
+        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-shadow z-50"
         onClick={() => {
           if (!user || user.role === "visitor") {
             alert(t("loginRequired"))
@@ -321,6 +343,17 @@ export default function PostsPage() {
 
       {/* 发帖对话框 */}
       <CreatePostDialog open={isCreatePostOpen} onOpenChange={setIsCreatePostOpen} onPostCreated={handlePostCreated} />
+
+      {lightboxSrc && (
+        <ImageLightbox
+          open={!!lightboxSrc}
+          onOpenChange={(open) => {
+            if (!open) setLightboxSrc(null)
+          }}
+          src={lightboxSrc}
+          alt={lightboxAlt}
+        />
+      )}
     </div>
   )
 }
