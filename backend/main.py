@@ -8,6 +8,7 @@ from uuid import UUID, uuid4
 
 from fastapi import Depends, FastAPI, File, HTTPException, Query, Request, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -20,6 +21,7 @@ from app.email_service import send_verification_email
 from app.models import AboutSection, Comment, EmailVerificationCode, Post, User, UserRole
 from app.schemas import (
     AboutSectionResponse,
+    AboutSectionCreate,
     AboutSectionUpdate,
     CommentCreate,
     CommentResponse,
@@ -315,6 +317,70 @@ def update_about_section(
     db.commit()
     db.refresh(section)
     return section
+
+
+def _normalize_about_slug(raw: str) -> str:
+    slug = raw.strip().lower()
+    if not slug:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Slug cannot be empty")
+    if len(slug) > 64:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Slug too long")
+    allowed = set("abcdefghijklmnopqrstuvwxyz0123456789_-")
+    if any(ch not in allowed for ch in slug):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Slug may only contain lowercase letters, numbers, '_' and '-'",
+        )
+    return slug
+
+
+@app.post("/about/sections", response_model=AboutSectionResponse, status_code=status.HTTP_201_CREATED)
+def create_about_section(
+    payload: AboutSectionCreate,
+    current_user: User = Depends(require_roles(UserRole.SUPERADMIN)),
+    db: Session = Depends(get_db),
+) -> AboutSectionResponse:
+    if payload.slug:
+        slug = _normalize_about_slug(payload.slug)
+        exists = db.query(AboutSection).filter(AboutSection.slug == slug).one_or_none()
+        if exists:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Slug already exists")
+    else:
+        slug = ""
+        for _ in range(10):
+            candidate = f"section_{uuid4().hex[:10]}"
+            exists = db.query(AboutSection).filter(AboutSection.slug == candidate).one_or_none()
+            if not exists:
+                slug = candidate
+                break
+        if not slug:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to generate slug")
+
+    section = AboutSection(
+        slug=slug,
+        title=payload.title,
+        body_markdown=payload.body_markdown or "",
+        updated_by=current_user.id,
+        updated_at=now(),
+    )
+    db.add(section)
+    db.commit()
+    db.refresh(section)
+    return section
+
+
+@app.delete("/about/sections/{slug}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_about_section(
+    slug: str,
+    _: User = Depends(require_roles(UserRole.SUPERADMIN)),
+    db: Session = Depends(get_db),
+) -> Response:
+    section = db.query(AboutSection).filter(AboutSection.slug == slug).one_or_none()
+    if not section:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Section not found")
+    db.delete(section)
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @app.patch("/admin/users/{user_id}/role", response_model=UserResponse)

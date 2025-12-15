@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Textarea } from "@/components/ui/textarea"
 import { useLanguage } from "@/components/providers/language-provider"
 import { useAuth } from "@/components/providers/auth-provider"
@@ -12,6 +12,7 @@ import Image from "next/image"
 import { CreatePostDialog } from "@/components/create-post-dialog"
 import { ImageLightbox } from "@/components/image-lightbox"
 import { apiFetch } from "@/lib/api"
+import { getAvatarSrc } from "@/lib/avatar"
 import type { Comment, PaginatedPosts, Post } from "@/lib/types"
 
 export default function PostsPage() {
@@ -160,17 +161,22 @@ export default function PostsPage() {
           {errorMessage && <p className="text-base text-red-500">{errorMessage}</p>}
 
           {/* 帖子列表 */}
-          {posts.map((post) => (
+          {posts.map((post, index) => (
             <Card
               key={post.id}
               className={`overflow-hidden cursor-pointer ${
                 selectedPost?.id === post.id ? "ring-2 ring-primary" : ""
-              }`}
+              } animate-in fade-in slide-in-from-bottom-2 duration-500 ease-out fill-mode-both motion-reduce:animate-none`}
               onClick={() => handleSelectPost(post)}
+              style={{ animationDelay: `${Math.min(index, 8) * 50}ms` }}
             >
               <CardHeader className="space-y-4 p-5 md:p-6">
                 <div className="flex items-center gap-4">
                   <Avatar className="h-12 w-12">
+                    <AvatarImage
+                      src={getAvatarSrc(post.author_id)}
+                      alt={post.title ? `${post.title} author avatar` : "author avatar"}
+                    />
                     <AvatarFallback className="bg-primary/15 text-primary text-base font-medium">
                       {(post.title?.[0] || "兔").toUpperCase()}
                     </AvatarFallback>
@@ -238,7 +244,7 @@ export default function PostsPage() {
         {selectedPost && (
           <div className="hidden lg:block lg:col-span-5">
             <div className="sticky top-20 space-y-4">
-              <Card className="max-h-[calc(100vh-6rem)] flex flex-col bg-background/80 backdrop-blur-sm border-2">
+              <Card className="max-h-[calc(100vh-6rem)] flex flex-col bg-background/80 backdrop-blur-sm border-2 animate-in fade-in slide-in-from-right-2 duration-300 ease-out fill-mode-both motion-reduce:animate-none">
                 <CardHeader className="border-b flex-shrink-0 p-5">
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-semibold">
@@ -271,6 +277,10 @@ export default function PostsPage() {
                     {displayedComments.map((comment) => (
                       <div key={comment.id} className="flex gap-3">
                         <Avatar className="h-10 w-10 flex-shrink-0">
+                          <AvatarImage
+                            src={getAvatarSrc(comment.author_id)}
+                            alt={comment.author_id ? `${comment.author_id} avatar` : "avatar"}
+                          />
                           <AvatarFallback className="bg-muted text-muted-foreground text-sm md:text-base">
                             {comment.author_id?.[0] || "兔"}
                           </AvatarFallback>

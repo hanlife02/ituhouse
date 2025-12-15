@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useLanguage } from "@/components/providers/language-provider"
 import { useAuth } from "@/components/providers/auth-provider"
 import { apiFetch } from "@/lib/api"
+import { getAvatarSrc } from "@/lib/avatar"
 import type { PaginatedPosts, Post } from "@/lib/types"
 
 export default function ProfilePage() {
@@ -104,6 +105,7 @@ export default function ProfilePage() {
           <CardHeader className="p-8">
             <div className="flex items-center gap-6 md:gap-8">
               <Avatar className="h-24 w-24">
+                <AvatarImage src={getAvatarSrc(user.id)} alt={user.username ? `${user.username} avatar` : "avatar"} />
                 <AvatarFallback className="bg-primary text-primary-foreground text-4xl">
                   {user.username?.[0]?.toUpperCase() || "U"}
                 </AvatarFallback>
@@ -126,38 +128,6 @@ export default function ProfilePage() {
                   {user.created_at ? new Date(user.created_at).toLocaleDateString("zh-CN") : "未知"}
                 </span>
               </div>
-            </div>
-
-            <div className="pt-5 border-t">
-              <h3 className="text-lg font-medium mb-3">权限说明</h3>
-              <ul className="text-lg text-muted-foreground space-y-2 list-disc list-inside">
-                {user.role === "visitor" && (
-                  <>
-                    <li>可以浏览帖子</li>
-                    <li>不能发布帖子和评论</li>
-                  </>
-                )}
-                {user.role === "user" && (
-                  <>
-                    <li>可以浏览帖子</li>
-                    <li>可以发布帖子和评论</li>
-                  </>
-                )}
-                {user.role === "admin" && (
-                  <>
-                    <li>可以浏览、发布帖子和评论</li>
-                    <li>可以编辑关于页面内容</li>
-                    <li>可以管理用户帖子</li>
-                  </>
-                )}
-                {user.role === "super_admin" && (
-                  <>
-                    <li>拥有所有权限</li>
-                    <li>可以指定管理员</li>
-                    <li>可以管理所有内容</li>
-                  </>
-                )}
-              </ul>
             </div>
           </CardContent>
         </Card>

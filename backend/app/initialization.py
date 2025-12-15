@@ -49,9 +49,9 @@ def _ensure_about_sections(session: Session, settings) -> None:
     existing_slugs = {
         slug for (slug,) in session.execute(select(AboutSection.slug)).all()
     }
+    if existing_slugs:
+        return
     for slug, default_body in settings.about_default_sections.items():
-        if slug in existing_slugs:
-            continue
         title_map = {
             "about_rabbits": "关于兔兔们",
             "about_care_team": "关于兔兔护理队",

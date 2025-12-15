@@ -7,6 +7,7 @@ import { LanguageProvider } from "@/components/providers/language-provider"
 import { AuthProvider } from "@/components/providers/auth-provider"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
+import { RouteTransition } from "@/components/route-transition"
 
 export const metadata: Metadata = {
   title: "小兔书 | ituhouse",
@@ -31,7 +32,9 @@ export default function RootLayout({
             <AuthProvider>
               <div className="min-h-screen flex flex-col">
                 <Header />
-                <main className="flex-1 pb-16">{children}</main>
+                <main className="flex-1 pb-16">
+                  <RouteTransition>{children}</RouteTransition>
+                </main>
                 <Footer />
               </div>
             </AuthProvider>

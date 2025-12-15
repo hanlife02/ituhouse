@@ -121,5 +121,11 @@ class AboutSectionUpdate(BaseModel):
     title: Optional[str] = None
 
 
+class AboutSectionCreate(BaseModel):
+    title: str = Field(min_length=1, max_length=128)
+    body_markdown: str = Field(default="")
+    slug: Optional[str] = Field(default=None, max_length=64)
+
+
 class RoleUpdateRequest(BaseModel):
     role: UserRole

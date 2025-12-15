@@ -19,7 +19,7 @@ export default function HomePage() {
         <div className="flex flex-col items-center gap-10 md:flex-row md:items-center md:justify-between md:gap-12 xl:gap-24">
           {/* 左侧文字 */}
           <div className="flex flex-col items-center md:items-start text-center md:text-left flex-1 space-y-8">
-            <span className="inline-block rounded-full bg-primary/10 px-5 py-2 text-sm md:text-base font-medium text-primary">
+            <span className="inline-block rounded-full bg-primary/10 px-5 py-2 text-sm md:text-base font-medium text-primary animate-in fade-in slide-in-from-bottom-1 duration-500 ease-out fill-mode-both">
               Beta
             </span>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold leading-tight tracking-tight">
@@ -35,7 +35,10 @@ export default function HomePage() {
 
           {/* 右侧圆形 Logo */}
           <div className="order-last md:order-none flex-shrink-0">
-            <div className="h-56 w-56 sm:h-64 sm:w-64 md:h-56 md:w-56 lg:h-72 lg:w-72 rounded-full bg-primary/10 shadow-xl overflow-hidden">
+            <div
+              className="h-56 w-56 sm:h-64 sm:w-64 md:h-56 md:w-56 lg:h-72 lg:w-72 rounded-full bg-primary/10 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-700 ease-out fill-mode-both"
+              style={{ animationDelay: "120ms" }}
+            >
               <Image src="/logo.ico" alt="Logo" width={288} height={288} className="object-cover w-full h-full" />
             </div>
           </div>

@@ -314,7 +314,7 @@
 
   /* 为 Markdown 内容添加基础样式 */
   .prose {
-    @apply text-foreground;
+    @apply text-foreground flow-root;
   }
 
   .prose h2 {
@@ -336,9 +336,83 @@
   .prose li {
     @apply my-0.5;
   }
+
+  .prose img {
+    @apply block max-w-full h-auto rounded-xl border border-border/50 shadow-sm my-5;
+  }
+
+  .prose figure {
+    @apply my-6;
+  }
+
+  .prose figcaption {
+    @apply mt-2 text-sm text-muted-foreground text-center;
+  }
 }
 
 @layer utilities {
+  .md-img {
+    @apply block max-w-full h-auto rounded-xl border border-border/50 shadow-sm;
+  }
+
+  .md-figure {
+    @apply my-6;
+    display: table;
+  }
+
+  .md-figcaption {
+    @apply text-sm text-muted-foreground text-center;
+    display: table-caption;
+    caption-side: bottom;
+    padding-top: 0.75rem;
+  }
+
+  .md-link {
+    @apply text-primary underline underline-offset-4 hover:text-primary/80;
+  }
+
+  .md-embed {
+    @apply relative w-full aspect-video overflow-hidden rounded-xl border border-border/50 my-6;
+  }
+
+  .md-iframe {
+    @apply absolute inset-0 h-full w-full;
+  }
+
+  .md-img-center {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .md-img-left {
+    float: left;
+    margin: 0.25rem 1rem 0.75rem 0;
+    max-width: min(50%, 22rem);
+  }
+
+  .md-img-right {
+    float: right;
+    margin: 0.25rem 0 0.75rem 1rem;
+    max-width: min(50%, 22rem);
+  }
+
+  .md-img-sm {
+    max-width: 18rem;
+  }
+
+  .md-img-md {
+    max-width: 28rem;
+  }
+
+  .md-img-lg {
+    max-width: 40rem;
+  }
+
+  .md-img-wide {
+    width: 100%;
+    max-width: 100%;
+  }
+
   .reveal-text {
     display: inline-block;
     white-space: pre-wrap;
