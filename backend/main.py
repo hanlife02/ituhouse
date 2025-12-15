@@ -409,6 +409,6 @@ if __name__ == "__main__":
     uvicorn.run(
         app_target,
         host="0.0.0.0",
-        port=8000,
+        port=settings.api_port,
         reload=reload_enabled,
     )

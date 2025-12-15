@@ -42,6 +42,7 @@ def _list_env(key: str, default: list[str]) -> list[str]:
 class Settings:
     app_name: str
     environment: str
+    api_port: int
     database_url_override: Optional[str]
     database_host: str
     database_port: int
@@ -84,9 +85,12 @@ class Settings:
 @lru_cache()
 def get_settings() -> Settings:
     """Return cached application settings populated from environment variables."""
+    api_port_raw = os.getenv("PORT") or os.getenv("API_PORT")
+    api_port = int(api_port_raw) if api_port_raw is not None else 8000
     return Settings(
         app_name=_env("APP_NAME", "小兔书 ituhouse"),
         environment=_env("ENVIRONMENT", "development"),
+        api_port=api_port,
         database_url_override=os.getenv("DATABASE_URL"),
         database_host=_env("DB_HOST", "localhost"),
         database_port=_int_env("DB_PORT", 5432),
