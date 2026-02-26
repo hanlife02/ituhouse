@@ -19,7 +19,7 @@ cd frontend
 pnpm install
 pnpm dev
 ```
-666
+
 ---
 
 版权 © 北京大学校园公益营建社 · 兔兔护理队
