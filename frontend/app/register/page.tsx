@@ -36,7 +36,7 @@ export default function RegisterPage() {
     if (!email) return
     setError(null)
     try {
-      const response = await apiFetch<{ code?: string }>("/auth/request-code", {
+      await apiFetch<{ message?: string }>("/auth/request-code", {
         method: "POST",
         body: JSON.stringify({ email }),
       })
@@ -50,11 +50,7 @@ export default function RegisterPage() {
           return prev - 1
         })
       }, 1000)
-      if (response.code) {
-        setCodeHint(language === "zh" ? `测试验证码：${response.code}` : `Test code: ${response.code}`)
-      } else {
-        setCodeHint(language === "zh" ? "验证码已发送至邮箱。" : "Verification code sent to your inbox.")
-      }
+      setCodeHint(language === "zh" ? "验证码已发送至邮箱。" : "Verification code sent to your inbox.")
     } catch (err: any) {
       setError(err?.message || "验证码发送失败，请稍后再试")
     }

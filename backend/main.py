@@ -134,10 +134,7 @@ def request_email_code(payload: EmailCodeRequest, db: Session = Depends(get_db))
     is_production = settings.environment.lower() == "production"
     if not email_sent and is_production:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to send verification email")
-    response: dict[str, str] = {"message": "Verification code generated"}
-    if not is_production:
-        response["code"] = code
-    return response
+    return {"message": "Verification code generated"}
 
 
 @app.post("/auth/register", response_model=UserResponse)
