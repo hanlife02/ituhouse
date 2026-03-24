@@ -1,7 +1,4 @@
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  process.env.NEXT_PUBLIC_URL ||
-  "http://localhost:8000"
+const API_BASE_URL = process.env.NEXT_PUBLIC_URL || "http://localhost:8000"
 
 type ApiFetchOptions = RequestInit & {
   token?: string

@@ -4,9 +4,9 @@
   "private": true,
   "scripts": {
     "build": "next build",
-    "dev": "next dev -p 5678",
+    "dev": "cross-env-shell \"next dev -p ${PORT:-5678}\"",
     "lint": "eslint .",
-    "start": "next build && next start -p 5678"
+    "start": "cross-env-shell \"next build && next start -p ${PORT:-5678}\""
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
