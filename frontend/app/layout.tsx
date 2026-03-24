@@ -8,6 +8,7 @@ import { AuthProvider } from "@/components/providers/auth-provider"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { RouteTransition } from "@/components/route-transition"
+import { APP_SCROLL_CONTAINER_ID } from "@/lib/scroll-container"
 
 export const metadata: Metadata = {
   title: "小兔书 | ituhouse",
@@ -26,16 +27,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN" suppressHydrationWarning>
-      <body className={`font-sans antialiased`}>
+      <body className={`font-sans antialiased overflow-hidden`}>
         <ThemeProvider>
           <LanguageProvider>
             <AuthProvider>
-              <div className="min-h-screen flex flex-col">
-                <Header />
-                <main className="flex-1 pb-16">
-                  <RouteTransition>{children}</RouteTransition>
-                </main>
-                <Footer />
+              <div className="h-[100dvh] overflow-hidden">
+                <div id={APP_SCROLL_CONTAINER_ID} className="h-full overflow-y-auto overscroll-none">
+                  <div className="min-h-full flex flex-col">
+                    <Header />
+                    <main className="flex-1 pb-16">
+                      <RouteTransition>{children}</RouteTransition>
+                    </main>
+                    <Footer />
+                  </div>
+                </div>
               </div>
             </AuthProvider>
           </LanguageProvider>

@@ -9,6 +9,7 @@ cd backend
 pip install -r requirements.txt
 cp .env.example .env
 cp email_senders.json.example email_senders.json
+export API_HOST=0.0.0.0
 export API_PORT=8000
 python main.py
 ```
@@ -16,6 +17,7 @@ python main.py
 也可以直接在 `backend/.env` 中设置：
 
 ```env
+API_HOST=0.0.0.0
 API_PORT=8000
 ```
 

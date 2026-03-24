@@ -41,3 +41,37 @@ function safeParseJSON(payload: string) {
     return payload
   }
 }
+
+export function normalizePaginatedPosts(payload: unknown) {
+  if (Array.isArray(payload)) {
+    return {
+      items: payload,
+      page: 1,
+      page_size: payload.length,
+      total: payload.length,
+      has_more: false,
+    }
+  }
+
+  if (typeof payload === "object" && payload !== null) {
+    const candidate = payload as {
+      items?: unknown
+      page?: unknown
+      page_size?: unknown
+      total?: unknown
+      has_more?: unknown
+    }
+
+    if (Array.isArray(candidate.items)) {
+      return {
+        items: candidate.items,
+        page: typeof candidate.page === "number" ? candidate.page : 1,
+        page_size: typeof candidate.page_size === "number" ? candidate.page_size : candidate.items.length,
+        total: typeof candidate.total === "number" ? candidate.total : candidate.items.length,
+        has_more: typeof candidate.has_more === "boolean" ? candidate.has_more : false,
+      }
+    }
+  }
+
+  throw new Error("帖子接口返回格式不正确，请检查 NEXT_PUBLIC_URL 是否指向后端服务")
+}

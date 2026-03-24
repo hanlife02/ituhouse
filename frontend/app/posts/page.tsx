@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
+import { createPortal } from "react-dom"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -11,8 +12,9 @@ import { MessageSquare, ChevronDown, X, Plus, ArrowUp } from "lucide-react"
 import Image from "next/image"
 import { CreatePostDialog } from "@/components/create-post-dialog"
 import { ImageLightbox } from "@/components/image-lightbox"
-import { apiFetch } from "@/lib/api"
+import { apiFetch, normalizePaginatedPosts } from "@/lib/api"
 import { getAvatarSrc } from "@/lib/avatar"
+import { getAppScrollContainer } from "@/lib/scroll-container"
 import type { Comment, PaginatedPosts, Post } from "@/lib/types"
 
 export default function PostsPage() {
@@ -32,6 +34,12 @@ export default function PostsPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null)
   const [lightboxAlt, setLightboxAlt] = useState("Post image")
+  const [mounted, setMounted] = useState(false)
+  const [selectedPostOffset, setSelectedPostOffset] = useState(0)
+  const postsColumnRef = useRef<HTMLDivElement | null>(null)
+  const postItemRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  const floatingActionButtonClass =
+    "h-14 w-14 rounded-full border border-border/60 bg-background/90 shadow-lg backdrop-blur transition-all hover:-translate-y-0.5 hover:shadow-xl"
   const dedupePosts = useCallback((list: Post[]) => {
     const seen = new Set<string>()
     const result: Post[] = []
@@ -58,7 +66,8 @@ export default function PostsPage() {
     setLoading(true)
     setErrorMessage(null)
     try {
-      const data = await apiFetch<PaginatedPosts>(`/posts?page=${page}&page_size=20`)
+      const response = await apiFetch<PaginatedPosts>(`/posts?page=${page}&page_size=20`)
+      const data = normalizePaginatedPosts(response)
       setPosts((prev) => dedupePosts([...prev, ...data.items]))
       setHasMore(data.has_more)
       setPage((prev) => prev + 1)
@@ -75,16 +84,44 @@ export default function PostsPage() {
   }, [])
 
   useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 300)
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    const syncSelectedPostOffset = () => {
+      if (!selectedPost) {
+        setSelectedPostOffset(0)
+        return
+      }
+
+      const postsColumn = postsColumnRef.current
+      const selectedPostElement = postItemRefs.current[selectedPost.id]
+      if (!postsColumn || !selectedPostElement) return
+
+      const nextOffset = Math.max(0, selectedPostElement.offsetTop - postsColumn.offsetTop)
+      setSelectedPostOffset(nextOffset)
     }
 
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
+    syncSelectedPostOffset()
+    window.addEventListener("resize", syncSelectedPostOffset)
+    return () => window.removeEventListener("resize", syncSelectedPostOffset)
+  }, [selectedPost, posts])
+
+  useEffect(() => {
+    const scrollContainer = getAppScrollContainer()
+    if (!scrollContainer) return
+
+    const handleScroll = () => {
+      setShowScrollTop(scrollContainer.scrollTop > 300)
+    }
+
+    handleScroll()
+    scrollContainer.addEventListener("scroll", handleScroll, { passive: true })
+    return () => scrollContainer.removeEventListener("scroll", handleScroll)
   }, [])
 
   const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" })
+    getAppScrollContainer()?.scrollTo({ top: 0, behavior: "smooth" })
   }
 
   const handleSelectPost = async (post: Post) => {
@@ -154,70 +191,76 @@ export default function PostsPage() {
   }
 
   return (
-    <div className="container py-10 px-5 md:px-10 lg:px-16 max-w-7xl mx-auto">
+    <div className="container relative py-10 pb-24 px-5 md:px-10 lg:px-16 max-w-7xl mx-auto">
       <div className={`${selectedPost ? "grid grid-cols-1 lg:grid-cols-12 gap-8" : ""}`}>
         {/* 左侧帖子列表 */}
-        <div className={`space-y-6 ${selectedPost ? "lg:col-span-7" : ""}`}>
+        <div ref={postsColumnRef} className={`space-y-6 ${selectedPost ? "lg:col-span-7" : ""}`}>
           {errorMessage && <p className="text-base text-red-500">{errorMessage}</p>}
 
           {/* 帖子列表 */}
           {posts.map((post, index) => (
-            <Card
+            <div
               key={post.id}
-              className={`overflow-hidden cursor-pointer ${
-                selectedPost?.id === post.id ? "ring-2 ring-primary" : ""
-              } animate-in fade-in slide-in-from-bottom-2 duration-500 ease-out fill-mode-both motion-reduce:animate-none`}
-              onClick={() => handleSelectPost(post)}
-              style={{ animationDelay: `${Math.min(index, 8) * 50}ms` }}
+              ref={(node) => {
+                postItemRefs.current[post.id] = node
+              }}
             >
-              <CardHeader className="space-y-4 p-5 md:p-6">
-                <div className="flex items-center gap-4">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage
-                      src={getAvatarSrc(post.author_id)}
-                      alt={post.title ? `${post.title} author avatar` : "author avatar"}
-                    />
-                    <AvatarFallback className="bg-primary/15 text-primary text-base font-medium">
-                      {(post.title?.[0] || "兔").toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col">
-                    <span className="text-base md:text-lg font-medium">
-                      {post.title || `${t("posts")} #${post.id.slice(0, 6)}`}
-                    </span>
-                    <span className="text-sm md:text-base text-muted-foreground">{formatDate(post.created_at)}</span>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4 px-5 pb-5 md:px-6">
-                <p className="text-base text-muted-foreground leading-relaxed line-clamp-3">{post.content}</p>
-                {post.image_url && (
-                  <button
-                    type="button"
-                    className="block w-full sm:max-w-[520px] sm:mx-auto"
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      openLightbox(post.image_url!, post.title ? `${post.title} image` : "Post image")
-                    }}
-                  >
-                    <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl border">
-                      <Image
-                        src={post.image_url || "/placeholder.svg"}
-                        alt={post.title ? `${post.title} image` : "Post image"}
-                        fill
-                        className="object-cover transition-transform hover:scale-105"
+              <Card
+                className={`overflow-hidden cursor-pointer ${
+                  selectedPost?.id === post.id ? "ring-2 ring-primary" : ""
+                } animate-in fade-in slide-in-from-bottom-2 duration-500 ease-out fill-mode-both motion-reduce:animate-none`}
+                onClick={() => handleSelectPost(post)}
+                style={{ animationDelay: `${Math.min(index, 8) * 50}ms` }}
+              >
+                <CardHeader className="space-y-4 p-5 md:p-6">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-12 w-12">
+                      <AvatarImage
+                        src={getAvatarSrc(post.author_id)}
+                        alt={post.title ? `${post.title} author avatar` : "author avatar"}
                       />
+                      <AvatarFallback className="bg-primary/15 text-primary text-base font-medium">
+                        {(post.title?.[0] || "兔").toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col">
+                      <span className="text-base md:text-lg font-medium">
+                        {post.title || `${t("posts")} #${post.id.slice(0, 6)}`}
+                      </span>
+                      <span className="text-sm md:text-base text-muted-foreground">{formatDate(post.created_at)}</span>
                     </div>
-                  </button>
-                )}
-              </CardContent>
-              <CardFooter className="border-t p-5 gap-4">
-                <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground text-base" disabled>
-                  <MessageSquare className="h-5 w-5" />
-                  <span>{t("comments")}</span>
-                </Button>
-              </CardFooter>
-            </Card>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4 px-5 pb-5 md:px-6">
+                  <p className="text-base text-muted-foreground leading-relaxed line-clamp-3">{post.content}</p>
+                  {post.image_url && (
+                    <button
+                      type="button"
+                      className="block w-full sm:max-w-[520px] sm:mx-auto"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        openLightbox(post.image_url!, post.title ? `${post.title} image` : "Post image")
+                      }}
+                    >
+                      <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl border">
+                        <Image
+                          src={post.image_url || "/placeholder.svg"}
+                          alt={post.title ? `${post.title} image` : "Post image"}
+                          fill
+                          className="object-cover transition-transform hover:scale-105"
+                        />
+                      </div>
+                    </button>
+                  )}
+                </CardContent>
+                <CardFooter className="border-t p-5 gap-4">
+                  <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground text-base" disabled>
+                    <MessageSquare className="h-5 w-5" />
+                    <span>{t("comments")}</span>
+                  </Button>
+                </CardFooter>
+              </Card>
+            </div>
           ))}
 
           {/* 加载更多按钮 */}
@@ -243,7 +286,7 @@ export default function PostsPage() {
         {/* 右侧评论区 */}
         {selectedPost && (
           <div className="hidden lg:block lg:col-span-5">
-            <div className="sticky top-20 space-y-4">
+            <div className="space-y-4" style={{ marginTop: selectedPostOffset }}>
               <Card className="max-h-[calc(100vh-6rem)] flex flex-col bg-background/80 backdrop-blur-sm border-2 animate-in fade-in slide-in-from-right-2 duration-300 ease-out fill-mode-both motion-reduce:animate-none">
                 <CardHeader className="border-b flex-shrink-0 p-5">
                   <div className="flex items-center justify-between">
@@ -324,33 +367,6 @@ export default function PostsPage() {
         )}
       </div>
 
-      {/* 回到顶部按钮 */}
-      {showScrollTop && (
-        <Button
-          size="icon"
-          variant="outline"
-          className="fixed bottom-20 right-6 h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all z-50 bg-background"
-          onClick={scrollToTop}
-        >
-          <ArrowUp className="h-5 w-5" />
-        </Button>
-      )}
-
-      {/* 发帖按钮 */}
-      <Button
-        size="icon"
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-shadow z-50"
-        onClick={() => {
-          if (!user || user.role === "visitor") {
-            alert(t("loginRequired"))
-            return
-          }
-          setIsCreatePostOpen(true)
-        }}
-      >
-        <Plus className="h-6 w-6" />
-      </Button>
-
       {/* 发帖对话框 */}
       <CreatePostDialog open={isCreatePostOpen} onOpenChange={setIsCreatePostOpen} onPostCreated={handlePostCreated} />
 
@@ -364,6 +380,37 @@ export default function PostsPage() {
           alt={lightboxAlt}
         />
       )}
+
+      {mounted &&
+        createPortal(
+          <div className="pointer-events-none fixed inset-x-0 bottom-5 z-40">
+            <div className="container flex max-w-7xl justify-end px-5 md:px-10 lg:px-16">
+              <div className="pointer-events-auto flex w-fit flex-col items-center gap-3">
+                {showScrollTop && (
+                  <Button size="icon" variant="outline" className={floatingActionButtonClass} onClick={scrollToTop}>
+                    <ArrowUp className="h-6 w-6" />
+                  </Button>
+                )}
+
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className={floatingActionButtonClass}
+                  onClick={() => {
+                    if (!user || user.role === "visitor") {
+                      alert(t("loginRequired"))
+                      return
+                    }
+                    setIsCreatePostOpen(true)
+                  }}
+                >
+                  <Plus className="h-6 w-6" />
+                </Button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   )
 }

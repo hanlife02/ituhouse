@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useLanguage } from "@/components/providers/language-provider"
 import { useAuth } from "@/components/providers/auth-provider"
-import { apiFetch } from "@/lib/api"
+import { apiFetch, normalizePaginatedPosts } from "@/lib/api"
 import { getAvatarSrc } from "@/lib/avatar"
 import type { PaginatedPosts, Post } from "@/lib/types"
 
@@ -37,7 +37,8 @@ export default function ProfilePage() {
     const fetchMyPosts = async () => {
       setPostsLoading(true)
       try {
-        const data = await apiFetch<PaginatedPosts>(`/posts?page=1&page_size=20&author_id=${user.id}`)
+        const response = await apiFetch<PaginatedPosts>(`/posts?page=1&page_size=20&author_id=${user.id}`)
+        const data = normalizePaginatedPosts(response)
         if (!cancelled) {
           setMyPosts(data.items)
           setPostsHasMore(data.has_more)
@@ -65,7 +66,8 @@ export default function ProfilePage() {
     if (!user || postsLoadingMore || !postsHasMore) return
     setPostsLoadingMore(true)
     try {
-      const data = await apiFetch<PaginatedPosts>(`/posts?page=${postsPage}&page_size=20&author_id=${user.id}`)
+      const response = await apiFetch<PaginatedPosts>(`/posts?page=${postsPage}&page_size=20&author_id=${user.id}`)
+      const data = normalizePaginatedPosts(response)
       setMyPosts((prev) => [...prev, ...data.items])
       setPostsHasMore(data.has_more)
       setPostsPage((prev) => prev + 1)

@@ -408,7 +408,7 @@ if __name__ == "__main__":
     app_target = "main:app" if reload_enabled else app
     uvicorn.run(
         app_target,
-        host="0.0.0.0",
+        host=settings.api_host,
         port=settings.api_port,
         reload=reload_enabled,
     )

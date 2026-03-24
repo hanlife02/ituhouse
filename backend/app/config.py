@@ -42,6 +42,7 @@ def _list_env(key: str, default: list[str]) -> list[str]:
 class Settings:
     app_name: str
     environment: str
+    api_host: str
     api_port: int
     database_url_override: Optional[str]
     database_host: str
@@ -90,6 +91,7 @@ def get_settings() -> Settings:
     return Settings(
         app_name=_env("APP_NAME", "小兔书 ituhouse"),
         environment=_env("ENVIRONMENT", "development"),
+        api_host=_env("API_HOST", "0.0.0.0"),
         api_port=api_port,
         database_url_override=os.getenv("DATABASE_URL"),
         database_host=_env("DB_HOST", "localhost"),

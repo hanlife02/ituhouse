@@ -10,6 +10,7 @@ import { MobileNav } from "@/components/mobile-nav"
 import { useState, useEffect, useRef } from "react"
 import Image from "next/image"
 import { useAuth } from "@/components/providers/auth-provider"
+import { getAppScrollContainer } from "@/lib/scroll-container"
 
 export function Header() {
   const pathname = usePathname()
@@ -26,8 +27,11 @@ export function Header() {
   }, [])
 
   useEffect(() => {
+    const scrollContainer = getAppScrollContainer()
+    if (!scrollContainer) return
+
     const handleScroll = () => {
-      const currentScrollY = window.scrollY
+      const currentScrollY = scrollContainer.scrollTop
       const scrollDiff = currentScrollY - lastScrollY.current
 
       // 在顶部时始终显示
@@ -47,8 +51,9 @@ export function Header() {
       lastScrollY.current = currentScrollY
     }
 
-    window.addEventListener("scroll", handleScroll, { passive: true })
-    return () => window.removeEventListener("scroll", handleScroll)
+    handleScroll()
+    scrollContainer.addEventListener("scroll", handleScroll, { passive: true })
+    return () => scrollContainer.removeEventListener("scroll", handleScroll)
   }, [])
 
   const navItems = [
