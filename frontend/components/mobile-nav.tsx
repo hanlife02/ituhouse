@@ -6,11 +6,13 @@ import { usePathname } from "next/navigation"
 import { Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/components/providers/language-provider"
+import { useAuth } from "@/components/providers/auth-provider"
 
 export function MobileNav() {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
   const { t } = useLanguage()
+  const { user, logout, loading } = useAuth()
 
   const navItems = [
     { href: "/", label: t("home") },
@@ -40,6 +42,29 @@ export function MobileNav() {
                 {item.label}
               </Link>
             ))}
+
+            <div className="my-1 h-px bg-border" />
+
+            {user ? (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={loading}
+                className="w-full rounded-full"
+                onClick={() => {
+                  logout()
+                  setOpen(false)
+                }}
+              >
+                {t("logout")}
+              </Button>
+            ) : (
+              <Button asChild className="w-full rounded-full">
+                <Link href="/login" onClick={() => setOpen(false)}>
+                  {t("login")}
+                </Link>
+              </Button>
+            )}
           </nav>
         </div>
       )}
