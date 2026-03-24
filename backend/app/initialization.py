@@ -29,6 +29,14 @@ def _ensure_super_admin(session: Session, settings) -> None:
     ).scalar_one_or_none()
 
     if existing:
+        existing.username = settings.superadmin_username
+        existing.email = settings.superadmin_email
+        existing.hashed_password = get_password_hash(settings.superadmin_password)
+        existing.preferred_locale = settings.default_locale
+        existing.preferred_theme = settings.default_theme
+        existing.email_verified = True
+        existing.is_active = True
+        existing.updated_at = now()
         return
 
     user = User(
